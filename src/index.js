@@ -37,6 +37,16 @@ const optionDefinitions = [
     type: Number
   },
   {
+    name: "no-opll",
+    description: "Disable OPLL.",
+    type: Boolean
+  },
+  {
+    name: "no-psg",
+    description: "Disable PSG.",
+    type: Boolean
+  },
+  {
     name: "help",
     alias: "h",
     description: "Print this help.",
@@ -64,7 +74,7 @@ const RATE = 49716;
 const FM_DIV = 72;
 const PSG_DIV = 32;
 
-function convert(kss, duration, loop) {
+function convert(kss, duration, loop, noOpll, noPsg) {
   const ym2413 = new wmsx.YM2413Audio();
   const psg = new wmsx.PSG();
   const psgAudio = psg.getAudioChannel();
@@ -94,12 +104,15 @@ function convert(kss, duration, loop) {
     if (i % (CPU_CLOCK * 10) == 0) {
       process.stderr.write('.');
     }
-    if (i % PSG_DIV == 0) {
+    if (!noPsg && i % PSG_DIV == 0) {
       // rough rate conversion
       psgSample = psgAudio.nextSample() * 512;
     }
     if (i % FM_DIV == 0) {
-      fmSample = ym2413.nextSample();
+      if (!noOpll) {
+        fmSample = ym2413.nextSample();
+      }
+
       kssplay.calcSilent(1);
       if (kssplay.getStopFlag() != 0) {
         break;
@@ -134,7 +147,7 @@ async function main() {
 
   const data = fs.readFileSync(options.input);
   const kss = new KSS(data);
-  samples = convert(kss, options.duration, options.loop);
+  samples = convert(kss, options.duration, options.loop, options["no-opll"], options["no-psg"]);
   kss.release();
 
   const wav = new WaveFile();
