@@ -1,0 +1,3 @@
+[submodule "webmsx"]
+	path = webmsx
+	url = https://github.com/ppeccin/WebMSX.git
